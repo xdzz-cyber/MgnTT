@@ -6,13 +6,13 @@ namespace MagniseTestTask.Database;
 
 public static class DbInitializer
 {
-    public static async Task Seed(ApplicationDbContext ctx, IConfiguration config)
+    public static async Task Seed(ApplicationDbContext ctx, IConfiguration configuration)
     {
         try
         {
             if (!ctx.CryptoCurrencies.Any())
             {
-                var assets = await GetAssetsFromApi(config);
+                var assets = await GetAssetsFromApi($"{configuration.GetSection("GetAssetsUrl").Value}{configuration.GetSection("CoinApiKey").Value}");
                 var cryptoCurrencies = assets.Where(x => x.type_is_crypto == 1).Select(x => new CryptoCurrency()
                 {
                     Id = Guid.NewGuid(),
@@ -34,11 +34,9 @@ public static class DbInitializer
         
     }
 
-    private static async Task<List<Asset>> GetAssetsFromApi(IConfiguration configuration)
+    private static async Task<List<Asset>> GetAssetsFromApi(string path)
     {
-        using (var response = await new HttpClient().GetAsync(
-                   $"{configuration.GetSection("GetAssetsUrl").Value}{configuration.GetSection("CoinApiKey").Value}",
-                   HttpCompletionOption.ResponseHeadersRead))
+        using (var response = await new HttpClient().GetAsync(path, HttpCompletionOption.ResponseHeadersRead))
         {
             response.EnsureSuccessStatusCode();
             var stream = await response.Content.ReadAsStreamAsync();
